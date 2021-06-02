@@ -1,25 +1,56 @@
-import logo from './logo.svg';
-import './App.css';
+import { ChakraProvider } from "@chakra-ui/react";
+import React, { useEffect } from "react";
+import {
+  Switch,
+  Route,
+  BrowserRouter as Router,
+  Redirect,
+} from "react-router-dom";
 
-function App() {
+import Home from "./Home/Home";
+import Login from "./Login/Login";
+import Signup from "./Signup/Signup";
+import { QueryClient, QueryClientProvider } from "react-query";
+import { actionTypes, useStateValue } from "./store";
+import { useCookies } from "react-cookie";
+
+const queryClient = new QueryClient();
+const App = () => {
+  const [cookie] = useCookies(["jwt"]);
+  const [{ token }, dispatch] = useStateValue();
+
+  useEffect(() => {
+    const setToken = () => {
+      const { jwt } = cookie;
+      if (jwt) {
+        dispatch({ type: actionTypes.SET_TOKEN, value: jwt });
+      }
+    };
+    if (token === null) {
+      setToken();
+    }
+  }, [dispatch, token, cookie]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ChakraProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <Switch>
+            <Route path="/" exact={true}>
+              {token ? <Home /> : <Redirect to="/login" />}
+            </Route>
+            <Route path="/login">
+              {!token ? <Login /> : <Redirect to="/" />}
+            </Route>
+            <Route path="/signup">
+              {!token ? <Signup /> : <Redirect to="/" />}
+            </Route>
+            <Redirect to="/" />
+          </Switch>
+        </Router>
+      </QueryClientProvider>
+    </ChakraProvider>
   );
-}
+};
 
 export default App;
